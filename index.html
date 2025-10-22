@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>s.prxy a</title>
+<title>s.prxy b</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <style>
   html,body{height:100%;margin:0;font-family:Inter,system-ui,Segoe UI,Roboto;-webkit-font-smoothing:antialiased}
@@ -12,25 +12,36 @@
   header{background:#fff;padding:0.5rem 1rem;display:flex;justify-content:space-between;align-items:center;box-shadow:0 1px 6px rgba(0,0,0,.08)}
   #addressBar{display:flex;gap:.5rem;align-items:center;padding:.6rem;background:rgba(255,255,255,.9);margin:12px;border-radius:8px}
   #urlInput{flex:1;padding:.5rem;border:1px solid #e5e7eb;border-radius:6px}
+  #proxyInput{width:360px;padding:.45rem;border:1px solid #e5e7eb;border-radius:6px}
   #goBtn{background:#3b82f6;color:#fff;padding:.45rem .9rem;border-radius:6px;border:none;cursor:pointer}
+  #testProxy{background:#10b981;color:#fff;padding:.35rem .7rem;border-radius:6px;border:none;cursor:pointer}
   main{flex:1;position:relative;margin:12px;border-radius:8px;overflow:hidden;box-shadow:0 6px 24px rgba(0,0,0,.12)}
   iframe{width:100%;height:100%;border:0;background:#fff}
   footer{text-align:center;padding:.6rem;color:#fff;font-weight:600}
   .note{font-size:.9rem;color:#374151}
   .small{font-size:.85rem;color:#6b7280}
   .controls{display:flex;gap:.5rem;align-items:center}
+  .modeToggle{display:flex;align-items:center;gap:.4rem;padding:.25rem .5rem;border-radius:6px;background:rgba(0,0,0,0.03);border:1px solid rgba(0,0,0,0.04)}
+  .modeToggle input{accent-color:#3b82f6}
+  .statusBar{padding:.6rem 12px;background:rgba(255,255,255,0.85);border-top:1px solid rgba(0,0,0,0.03);display:flex;justify-content:space-between;align-items:center;gap:12px}
+  .statusText{font-size:.95rem;color:#111827}
 </style>
 </head>
 <body>
 <header>
   <div class="font-medium text-gray-700">s.prxy — single-file best-effort loader</div>
-  <div class="small">No header-stripping / no security bypass — respects remote site protections</div>
+  <div class="small">Proxy-enabled — respects remote site protections unless you provide a proxy that rewrites headers.</div>
 </header>
 <div id="addressBar" aria-label="address bar">
   <span>🔒</span>
   <input id="urlInput" placeholder="https://example.com" type="url" />
-  <input id="proxyInput" placeholder="Optional proxy endpoint (e.g. https://your-server/proxy?url=)" title="Optional proxy (must accept ?url=...)"/>
+  <input id="proxyInput" placeholder="Optional proxy endpoint (e.g. https://your-server/proxy?url= OR https://your-server/fetch/{url})" title="Optional proxy (use {url} as placeholder or add ?url=... will be appended)"/>
   <div class="controls">
+    <div class="modeToggle" title="When checked, the proxy input will be used to load pages">
+      <input id="useProxy" type="checkbox" />
+      <label for="useProxy" class="small">Use Proxy</label>
+    </div>
+    <button id="testProxy" title="Quickly test the proxy endpoint">Test Proxy</button>
     <button id="goBtn">Go</button>
     <button id="openNew">Open in new tab</button>
   </div>
@@ -39,60 +50,132 @@
   <iframe id="webFrame" sandbox="allow-same-origin allow-scripts allow-forms allow-popups"></iframe>
 </main>
 <footer>
-  <div id="status" class="note">Enter a URL and press Go. If the site forbids framing the page will attempt a fetch+inject fallback or use the proxy you provide.</div>
-  <div class="small">© <span id="year"></span> — This tool does not remove or conceal site security headers.</div>
+  <div class="statusBar">
+    <div id="status" class="statusText note">Enter a URL and press Go. If proxy is enabled the loader will use the proxy endpoint you provided.</div>
+    <div class="small">© <span id="year"></span> s.prxy</div>
+  </div>
 </footer>
 <script>
 document.getElementById('year').textContent = new Date().getFullYear();
 const frame = document.getElementById('webFrame');
 const urlInput = document.getElementById('urlInput');
 const proxyInput = document.getElementById('proxyInput');
+const useProxy = document.getElementById('useProxy');
 const status = document.getElementById('status');
-document.getElementById('goBtn').addEventListener('click', loadWebsite);
-document.getElementById('openNew').addEventListener('click', () => {
+const goBtn = document.getElementById('goBtn');
+const openNew = document.getElementById('openNew');
+const testProxyBtn = document.getElementById('testProxy');
+goBtn.addEventListener('click', loadWebsite);
+openNew.addEventListener('click', () => {
   let u = urlInput.value.trim();
   if(!u) return;
   if(!u.startsWith('http')) u = 'https://' + u;
   window.open(u, '_blank');
 });
+testProxyBtn.addEventListener('click', testProxy);
+try {
+  const savedProxy = localStorage.getItem('sprxy_proxy') || '';
+  const savedMode = localStorage.getItem('sprxy_useProxy');
+  if(savedProxy) proxyInput.value = savedProxy;
+  useProxy.checked = savedMode === 'true';
+} catch(e){ }
 function setStatus(msg, isError=false){
   status.textContent = msg;
   status.style.color = isError ? '#dc2626' : '#111827';
 }
+function escapeHtml(s){
+  return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+function buildProxyUrl(proxyBase, targetUrl){
+  if(!proxyBase) return null;
+  proxyBase = proxyBase.trim();
+  if(proxyBase.includes('{url}')) {
+    return proxyBase.replaceAll('{url}', encodeURIComponent(targetUrl));
+  }
+  try {
+    const hasQuery = proxyBase.includes('?');
+    const separator = hasQuery ? '&' : '?';
+    return proxyBase + separator + 'url=' + encodeURIComponent(targetUrl);
+  } catch(e){
+    return proxyBase + '?url=' + encodeURIComponent(targetUrl);
+  }
+}
+function normalizeUrl(raw){
+  let u = raw.trim();
+  if(!u) return '';
+  if(!/^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(u)) {
+    u = 'https://' + u;
+  }
+  return u;
+}
 async function loadWebsite(){
+  setStatus('Preparing to load...');
+  let raw = urlInput.value || '';
+  raw = raw.trim();
+  if(!raw){ setStatus('Please enter a URL', true); return; }
+  let url = normalizeUrl(raw);
+  try {
+    localStorage.setItem('sprxy_proxy', proxyInput.value.trim());
+    localStorage.setItem('sprxy_useProxy', useProxy.checked ? 'true' : 'false');
+  } catch(e){ }
+  const proxyBase = proxyInput.value.trim();
+  if(useProxy.checked){
+    if(!proxyBase){
+      setStatus('Proxy mode enabled but no proxy endpoint provided.', true);
+      return;
+    }
+    const proxyUrl = buildProxyUrl(proxyBase, url);
+    setStatus('Loading via proxy: ' + proxyBase);
+    frame.removeAttribute('srcdoc');
+    frame.src = proxyUrl;
+    const onLoad = () => {
+      setStatus('Loaded via proxy: ' + shorten(url));
+      cleanupEvents();
+    };
+    const onError = () => {
+      setStatus('Proxy load failed (network error).', true);
+      cleanupEvents();
+    };
+    const cleanupEvents = () => {
+      frame.removeEventListener('load', onLoad);
+      frame.removeEventListener('error', onError);
+      clearTimeout(timeoutId);
+    };
+    frame.addEventListener('load', onLoad);
+    frame.addEventListener('error', onError);
+    const timeoutId = setTimeout(() => {
+      setStatus('Proxy did not respond quickly — you may check your proxy server logs.', true);
+      cleanupEvents();
+    }, 15000);
+    return;
+  }
   setStatus('Attempting direct load into iframe...');
-  let url = urlInput.value.trim();
-  if(!url){ setStatus('Please enter a URL', true); return; }
-  if(!url.startsWith('http')) url = 'https://' + url;
-  let attemptedDirect = false;
   let directLoaded = false;
   function onFrameLoad(){
     directLoaded = true;
-    cleanup();
+    cleanupDirect();
     setStatus('Loaded directly in iframe (site allows embedding).');
   }
   function onFrameError(){
-    cleanup();
+    cleanupDirect();
   }
-  function cleanup(){
+  function cleanupDirect(){
     frame.removeEventListener('load', onFrameLoad);
     frame.removeEventListener('error', onFrameError);
     window.clearTimeout(directTimeout);
   }
   frame.addEventListener('load', onFrameLoad);
   frame.addEventListener('error', onFrameError);
-  attemptedDirect = true;
+  frame.removeAttribute('srcdoc');
   frame.src = url;
   const directTimeout = window.setTimeout(async () => {
-    if(directLoaded){
-      return;
-    }
-    setStatus('Direct frame load did not complete quickly — trying fetch fallback (may fail due to CORS/CSP).');
+    if(directLoaded) return;
+    setStatus('Direct frame load likely blocked — trying fetch fallback (may fail due to CORS/CSP).');
     try {
       let fetchUrl = url;
-      const proxy = proxyInput.value.trim();
-      if(proxy){
-        fetchUrl = proxy + encodeURIComponent(url);
+      if(proxyBase){
+        fetchUrl = buildProxyUrl(proxyBase, url);
+        setStatus('Using configured proxy for fetch fallback.');
       }
       const resp = await fetch(fetchUrl, { mode: 'cors', redirect: 'follow' });
       const contentType = resp.headers.get('content-type') || '';
@@ -115,9 +198,37 @@ async function loadWebsite(){
     }
   }, 2500);
 }
-function escapeHtml(s){
-  return s.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+function shorten(s, n=60){
+  if(!s) return '';
+  return s.length > n ? s.slice(0, n/2) + '…' + s.slice(-n/2) : s;
 }
+async function testProxy(){
+  const proxyBase = proxyInput.value.trim();
+  if(!proxyBase){
+    setStatus('Please enter a proxy endpoint to test.', true);
+    return;
+  }
+  const sample = 'https://example.com/';
+  const proxyUrl = buildProxyUrl(proxyBase, sample);
+  setStatus('Testing proxy endpoint...');
+  try {
+    const resp = await fetch(proxyUrl, { method: 'GET', mode: 'cors', redirect: 'follow' });
+    if(!resp.ok){
+      setStatus('Proxy test failed: ' + resp.status + ' ' + resp.statusText, true);
+      return;
+    }
+    const ct = resp.headers.get('content-type') || '';
+    if(ct.includes('text/html')){
+      setStatus('Proxy test succeeded (returned HTML). Good sign — proxy can fetch example.com.');
+    } else {
+      setStatus('Proxy responded but did not return HTML (content-type: ' + ct + ').', true);
+    }
+  } catch (err){
+    console.error(err);
+    setStatus('Proxy test failed: ' + (err && err.message ? err.message : 'network/error'), true);
+  }
+}
+urlInput.addEventListener('keydown', (e) => { if(e.key === 'Enter') loadWebsite(); });
 </script>
 </body>
 </html>
