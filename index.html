@@ -1,84 +1,122 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>s.prxy</title>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>s.prxy a</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <style>
-html, body {
-  margin:0; padding:0; height:100%; font-family: 'Inter', sans-serif; display:flex; flex-direction:column;
-  background: linear-gradient(135deg, #b993d6, #8ca6db, #a0d8ef, #c6a0f6);
-  background-size: 400% 400%;
-  animation: gradientMove 20s ease infinite;
-}
-@keyframes gradientMove {
-  0%{background-position:0% 50%;}
-  50%{background-position:100% 50%;}
-  100%{background-position:0% 50%;}
-}
-header {
-  background:white;
-  padding:0.5rem 1rem;
-  display:flex; justify-content:space-between; align-items:center;
-  box-shadow:0 1px 6px rgba(0,0,0,0.1);
-}
-.header-buttons {display:flex; gap:0.3rem;}
-.header-buttons div {width:12px; height:12px; border-radius:50%;}
-.header-buttons .red{background:#f56565;}
-.header-buttons .yellow{background:#ecc94b;}
-.header-buttons .green{background:#48bb78;}
-#addressBar {
-  display:flex; align-items:center; gap:0.5rem; padding:0.5rem; background:rgba(255,255,255,0.9);
-}
-#addressBar input {
-  flex:1; padding:0.4rem 0.6rem; border-radius:6px; border:1px solid #d1d5db; outline:none;
-}
-#addressBar button {
-  background:#3b82f6; color:white; padding:0.4rem 1rem; border-radius:6px; cursor:pointer; transition:0.2s;
-}
-#addressBar button:hover {background:#2563eb;}
-main {
-  flex:1; position:relative; overflow:hidden;
-}
-iframe {
-  width:100%; height:100%; border:none;
-  border-radius:0 0 0 0;
-  background:white;
-}
-footer {text-align:center; padding:0.5rem; color:#fff; font-weight:500;}
+  html,body{height:100%;margin:0;font-family:Inter,system-ui,Segoe UI,Roboto;-webkit-font-smoothing:antialiased}
+  body{display:flex;flex-direction:column;background:linear-gradient(135deg,#b993d6,#8ca6db,#a0d8ef,#c6a0f6);background-size:400% 400%;animation:gradientMove 20s ease infinite}
+  @keyframes gradientMove{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
+  header{background:#fff;padding:0.5rem 1rem;display:flex;justify-content:space-between;align-items:center;box-shadow:0 1px 6px rgba(0,0,0,.08)}
+  #addressBar{display:flex;gap:.5rem;align-items:center;padding:.6rem;background:rgba(255,255,255,.9);margin:12px;border-radius:8px}
+  #urlInput{flex:1;padding:.5rem;border:1px solid #e5e7eb;border-radius:6px}
+  #goBtn{background:#3b82f6;color:#fff;padding:.45rem .9rem;border-radius:6px;border:none;cursor:pointer}
+  main{flex:1;position:relative;margin:12px;border-radius:8px;overflow:hidden;box-shadow:0 6px 24px rgba(0,0,0,.12)}
+  iframe{width:100%;height:100%;border:0;background:#fff}
+  footer{text-align:center;padding:.6rem;color:#fff;font-weight:600}
+  .note{font-size:.9rem;color:#374151}
+  .small{font-size:.85rem;color:#6b7280}
+  .controls{display:flex;gap:.5rem;align-items:center}
 </style>
 </head>
 <body>
 <header>
-  <div class="header-buttons">
-    <div class="red"></div>
-    <div class="yellow"></div>
-    <div class="green"></div>
-  </div>
-  <div class="font-medium text-gray-700">s.prxy - Developed by @sealgod.xyz</div>
-  <div class="flex gap-2">
-    <button class="text-gray-500 hover:text-gray-700">Settings</button>
-    <button class="text-gray-500 hover:text-gray-700">Profile</button>
-  </div>
+  <div class="font-medium text-gray-700">s.prxy — single-file best-effort loader</div>
+  <div class="small">No header-stripping / no security bypass — respects remote site protections</div>
 </header>
-<div id="addressBar">
+<div id="addressBar" aria-label="address bar">
   <span>🔒</span>
-  <input type="text" id="urlInput" placeholder="https://example.com">
-  <button onclick="loadWebsite()">Go</button>
+  <input id="urlInput" placeholder="https://example.com" type="url" />
+  <input id="proxyInput" placeholder="Optional proxy endpoint (e.g. https://your-server/proxy?url=)" title="Optional proxy (must accept ?url=...)"/>
+  <div class="controls">
+    <button id="goBtn">Go</button>
+    <button id="openNew">Open in new tab</button>
+  </div>
 </div>
 <main>
-  <iframe id="webFrame"></iframe>
+  <iframe id="webFrame" sandbox="allow-same-origin allow-scripts allow-forms allow-popups"></iframe>
 </main>
-<footer>© <span id="year"></span> Clean Browser UI</footer>
+<footer>
+  <div id="status" class="note">Enter a URL and press Go. If the site forbids framing the page will attempt a fetch+inject fallback or use the proxy you provide.</div>
+  <div class="small">© <span id="year"></span> — This tool does not remove or conceal site security headers.</div>
+</footer>
 <script>
-const frame = document.getElementById('webFrame');
 document.getElementById('year').textContent = new Date().getFullYear();
-function loadWebsite() {
-  let url = document.getElementById('urlInput').value;
-  if (!url) return;
-  if (!url.startsWith('http')) url = 'https://' + url;
+const frame = document.getElementById('webFrame');
+const urlInput = document.getElementById('urlInput');
+const proxyInput = document.getElementById('proxyInput');
+const status = document.getElementById('status');
+document.getElementById('goBtn').addEventListener('click', loadWebsite);
+document.getElementById('openNew').addEventListener('click', () => {
+  let u = urlInput.value.trim();
+  if(!u) return;
+  if(!u.startsWith('http')) u = 'https://' + u;
+  window.open(u, '_blank');
+});
+function setStatus(msg, isError=false){
+  status.textContent = msg;
+  status.style.color = isError ? '#dc2626' : '#111827';
+}
+async function loadWebsite(){
+  setStatus('Attempting direct load into iframe...');
+  let url = urlInput.value.trim();
+  if(!url){ setStatus('Please enter a URL', true); return; }
+  if(!url.startsWith('http')) url = 'https://' + url;
+  let attemptedDirect = false;
+  let directLoaded = false;
+  function onFrameLoad(){
+    directLoaded = true;
+    cleanup();
+    setStatus('Loaded directly in iframe (site allows embedding).');
+  }
+  function onFrameError(){
+    cleanup();
+  }
+  function cleanup(){
+    frame.removeEventListener('load', onFrameLoad);
+    frame.removeEventListener('error', onFrameError);
+    window.clearTimeout(directTimeout);
+  }
+  frame.addEventListener('load', onFrameLoad);
+  frame.addEventListener('error', onFrameError);
+  attemptedDirect = true;
   frame.src = url;
+  const directTimeout = window.setTimeout(async () => {
+    if(directLoaded){
+      return;
+    }
+    setStatus('Direct frame load did not complete quickly — trying fetch fallback (may fail due to CORS/CSP).');
+    try {
+      let fetchUrl = url;
+      const proxy = proxyInput.value.trim();
+      if(proxy){
+        fetchUrl = proxy + encodeURIComponent(url);
+      }
+      const resp = await fetch(fetchUrl, { mode: 'cors', redirect: 'follow' });
+      const contentType = resp.headers.get('content-type') || '';
+      if(!resp.ok){
+        setStatus('Fetch failed: ' + resp.status + ' ' + resp.statusText, true);
+        return;
+      }
+      if(!contentType.includes('text/html')){
+        setStatus('Fetched resource is not HTML (content-type: ' + contentType + '). Cannot inject into iframe.', true);
+        return;
+      }
+      const text = await resp.text();
+      const baseTag = `<base href="${escapeHtml(url)}">`;
+      const sandboxedHtml = `<!doctype html><html><head>${baseTag}<meta charset="utf-8"></head><body>${text}</body></html>`;
+      frame.srcdoc = sandboxedHtml;
+      setStatus('Injected fetched HTML into iframe via srcdoc. Note: scripts, forms, and some resources may not work due to CORS/CSP.');
+    } catch (err) {
+      console.error(err);
+      setStatus('Fetch fallback failed: ' + (err && err.message ? err.message : 'unknown error'), true);
+    }
+  }, 2500);
+}
+function escapeHtml(s){
+  return s.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
 </script>
 </body>
