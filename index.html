@@ -1,234 +1,199 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>s.prxy b</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>s.prxy c</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <style>
-  html,body{height:100%;margin:0;font-family:Inter,system-ui,Segoe UI,Roboto;-webkit-font-smoothing:antialiased}
-  body{display:flex;flex-direction:column;background:linear-gradient(135deg,#b993d6,#8ca6db,#a0d8ef,#c6a0f6);background-size:400% 400%;animation:gradientMove 20s ease infinite}
-  @keyframes gradientMove{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
-  header{background:#fff;padding:0.5rem 1rem;display:flex;justify-content:space-between;align-items:center;box-shadow:0 1px 6px rgba(0,0,0,.08)}
-  #addressBar{display:flex;gap:.5rem;align-items:center;padding:.6rem;background:rgba(255,255,255,.9);margin:12px;border-radius:8px}
-  #urlInput{flex:1;padding:.5rem;border:1px solid #e5e7eb;border-radius:6px}
-  #proxyInput{width:360px;padding:.45rem;border:1px solid #e5e7eb;border-radius:6px}
-  #goBtn{background:#3b82f6;color:#fff;padding:.45rem .9rem;border-radius:6px;border:none;cursor:pointer}
-  #testProxy{background:#10b981;color:#fff;padding:.35rem .7rem;border-radius:6px;border:none;cursor:pointer}
-  main{flex:1;position:relative;margin:12px;border-radius:8px;overflow:hidden;box-shadow:0 6px 24px rgba(0,0,0,.12)}
-  iframe{width:100%;height:100%;border:0;background:#fff}
-  footer{text-align:center;padding:.6rem;color:#fff;font-weight:600}
-  .note{font-size:.9rem;color:#374151}
-  .small{font-size:.85rem;color:#6b7280}
-  .controls{display:flex;gap:.5rem;align-items:center}
-  .modeToggle{display:flex;align-items:center;gap:.4rem;padding:.25rem .5rem;border-radius:6px;background:rgba(0,0,0,0.03);border:1px solid rgba(0,0,0,0.04)}
-  .modeToggle input{accent-color:#3b82f6}
-  .statusBar{padding:.6rem 12px;background:rgba(255,255,255,0.85);border-top:1px solid rgba(0,0,0,0.03);display:flex;justify-content:space-between;align-items:center;gap:12px}
-  .statusText{font-size:.95rem;color:#111827}
+html,body{height:100%;margin:0;font-family:Inter,system-ui,Segoe UI,Roboto;-webkit-font-smoothing:antialiased}
+body{display:flex;flex-direction:column;background:linear-gradient(135deg,#b993d6,#8ca6db,#a0d8ef,#c6a0f6);background-size:400% 400%;animation:gradientMove 20s ease infinite}
+@keyframes gradientMove{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
+.window-bar{display:flex;align-items:center;gap:0.5rem;padding:.5rem 1rem;background:#fff;box-shadow:0 1px 6px rgba(0,0,0,.08)}
+.window-buttons{display:flex;gap:0.35rem}
+.window-buttons .btn{width:12px;height:12px;border-radius:50%;display:inline-block}
+.window-buttons .red{background:#f56565}
+.window-buttons .yellow{background:#ecc94b}
+.window-buttons .green{background:#48bb78}
+.tab-bar{display:flex;align-items:center;gap:.25rem;padding:.25rem 1rem;background:rgba(255,255,255,.95);overflow-x:auto;scrollbar-width:none;-ms-overflow-style:none}
+.tab-bar::-webkit-scrollbar{display:none}
+.tab{padding:.25rem .75rem;border-radius:6px;background:#f3f4f6;cursor:pointer;display:flex;align-items:center;gap:.25rem;font-size:.85rem}
+.tab.active{background:#3b82f6;color:white}
+.tab .close-tab{font-weight:bold;cursor:pointer;color:#6b7280}
+.tab .close-tab:hover{color:#ef4444}
+#addressBar{display:flex;gap:.5rem;align-items:center;padding:.6rem;background:rgba(255,255,255,.9);margin:12px;border-radius:8px}
+#urlInput{flex:1;padding:.5rem;border:1px solid #e5e7eb;border-radius:6px}
+#goBtn,#backBtn,#forwardBtn,#reloadBtn{background:#3b82f6;color:#fff;padding:.45rem .9rem;border-radius:6px;border:none;cursor:pointer}
+main{flex:1;position:relative;margin:12px;border-radius:8px;overflow:hidden;box-shadow:0 6px 24px rgba(0,0,0,.12)}
+iframe{width:100%;height:100%;border:0;background:#fff}
+footer{text-align:center;padding:.6rem;color:#fff;font-weight:600}
+.note{font-size:.9rem;color:#374151}
+.small{font-size:.85rem;color:#6b7280}
+.status-bar{padding:.6rem 12px;background:rgba(255,255,255,0.85);border-top:1px solid rgba(0,0,0,0.03);display:flex;justify-content:space-between;align-items:center;gap:12px}
+.statusText{font-size:.95rem;color:#111827}
 </style>
 </head>
 <body>
-<header>
-  <div class="font-medium text-gray-700">s.prxy — single-file best-effort loader</div>
-  <div class="small">Proxy-enabled — respects remote site protections unless you provide a proxy that rewrites headers.</div>
-</header>
-<div id="addressBar" aria-label="address bar">
-  <span>🔒</span>
-  <input id="urlInput" placeholder="https://example.com" type="url" />
-  <input id="proxyInput" placeholder="Optional proxy endpoint (e.g. https://your-server/proxy?url= OR https://your-server/fetch/{url})" title="Optional proxy (use {url} as placeholder or add ?url=... will be appended)"/>
-  <div class="controls">
-    <div class="modeToggle" title="When checked, the proxy input will be used to load pages">
-      <input id="useProxy" type="checkbox" />
-      <label for="useProxy" class="small">Use Proxy</label>
-    </div>
-    <button id="testProxy" title="Quickly test the proxy endpoint">Test Proxy</button>
-    <button id="goBtn">Go</button>
-    <button id="openNew">Open in new tab</button>
+<div class="window-bar">
+  <div class="window-buttons">
+    <div class="btn red" id="closeBtn"></div>
+    <div class="btn yellow" id="minimizeBtn"></div>
+    <div class="btn green" id="maximizeBtn"></div>
   </div>
+  <div class="font-medium text-gray-700 ml-4">s.prxy - Developed by @sealgod.xyz</div>
 </div>
-<main>
-  <iframe id="webFrame" sandbox="allow-same-origin allow-scripts allow-forms allow-popups"></iframe>
-</main>
+<div class="tab-bar" id="tabBar">
+  <button id="addTabBtn" class="tab">+</button>
+</div>
+<div id="addressBar">
+  <button id="backBtn">◀</button>
+  <button id="forwardBtn">▶</button>
+  <button id="reloadBtn">⟳</button>
+  <input id="urlInput" placeholder="https://example.com" type="url" />
+  <button id="goBtn">Go</button>
+</div>
+<main id="mainContainer"></main>
 <footer>
-  <div class="statusBar">
-    <div id="status" class="statusText note">Enter a URL and press Go. If proxy is enabled the loader will use the proxy endpoint you provided.</div>
+  <div class="status-bar">
+    <div id="status" class="statusText note">Enter a URL and press Go. Proxy will be auto-used if configured.</div>
     <div class="small">© <span id="year"></span> s.prxy</div>
   </div>
 </footer>
 <script>
 document.getElementById('year').textContent = new Date().getFullYear();
-const frame = document.getElementById('webFrame');
+const proxyBase = "https://api.allorigins.win/raw?url=";
+let tabs = [];
+let activeTabId = null;
+let tabCounter = 0;
+const tabBar = document.getElementById('tabBar');
+const addTabBtn = document.getElementById('addTabBtn');
+const mainContainer = document.getElementById('mainContainer');
 const urlInput = document.getElementById('urlInput');
-const proxyInput = document.getElementById('proxyInput');
-const useProxy = document.getElementById('useProxy');
-const status = document.getElementById('status');
+const backBtn = document.getElementById('backBtn');
+const forwardBtn = document.getElementById('forwardBtn');
+const reloadBtn = document.getElementById('reloadBtn');
 const goBtn = document.getElementById('goBtn');
-const openNew = document.getElementById('openNew');
-const testProxyBtn = document.getElementById('testProxy');
-goBtn.addEventListener('click', loadWebsite);
-openNew.addEventListener('click', () => {
-  let u = urlInput.value.trim();
-  if(!u) return;
-  if(!u.startsWith('http')) u = 'https://' + u;
-  window.open(u, '_blank');
-});
-testProxyBtn.addEventListener('click', testProxy);
-try {
-  const savedProxy = localStorage.getItem('sprxy_proxy') || '';
-  const savedMode = localStorage.getItem('sprxy_useProxy');
-  if(savedProxy) proxyInput.value = savedProxy;
-  useProxy.checked = savedMode === 'true';
-} catch(e){ }
-function setStatus(msg, isError=false){
+const status = document.getElementById('status');
+const closeBtn = document.getElementById('closeBtn');
+const minimizeBtn = document.getElementById('minimizeBtn');
+const maximizeBtn = document.getElementById('maximizeBtn');
+function setStatus(msg,isError=false){
   status.textContent = msg;
-  status.style.color = isError ? '#dc2626' : '#111827';
-}
-function escapeHtml(s){
-  return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-}
-function buildProxyUrl(proxyBase, targetUrl){
-  if(!proxyBase) return null;
-  proxyBase = proxyBase.trim();
-  if(proxyBase.includes('{url}')) {
-    return proxyBase.replaceAll('{url}', encodeURIComponent(targetUrl));
-  }
-  try {
-    const hasQuery = proxyBase.includes('?');
-    const separator = hasQuery ? '&' : '?';
-    return proxyBase + separator + 'url=' + encodeURIComponent(targetUrl);
-  } catch(e){
-    return proxyBase + '?url=' + encodeURIComponent(targetUrl);
-  }
+  status.style.color = isError?'#dc2626':'#111827';
 }
 function normalizeUrl(raw){
   let u = raw.trim();
   if(!u) return '';
-  if(!/^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(u)) {
-    u = 'https://' + u;
-  }
+  if(!/^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(u)) u = 'https://' + u;
   return u;
 }
-async function loadWebsite(){
-  setStatus('Preparing to load...');
-  let raw = urlInput.value || '';
-  raw = raw.trim();
-  if(!raw){ setStatus('Please enter a URL', true); return; }
-  let url = normalizeUrl(raw);
-  try {
-    localStorage.setItem('sprxy_proxy', proxyInput.value.trim());
-    localStorage.setItem('sprxy_useProxy', useProxy.checked ? 'true' : 'false');
-  } catch(e){ }
-  const proxyBase = proxyInput.value.trim();
-  if(useProxy.checked){
-    if(!proxyBase){
-      setStatus('Proxy mode enabled but no proxy endpoint provided.', true);
-      return;
-    }
-    const proxyUrl = buildProxyUrl(proxyBase, url);
-    setStatus('Loading via proxy: ' + proxyBase);
-    frame.removeAttribute('srcdoc');
-    frame.src = proxyUrl;
-    const onLoad = () => {
-      setStatus('Loaded via proxy: ' + shorten(url));
-      cleanupEvents();
-    };
-    const onError = () => {
-      setStatus('Proxy load failed (network error).', true);
-      cleanupEvents();
-    };
-    const cleanupEvents = () => {
-      frame.removeEventListener('load', onLoad);
-      frame.removeEventListener('error', onError);
-      clearTimeout(timeoutId);
-    };
-    frame.addEventListener('load', onLoad);
-    frame.addEventListener('error', onError);
-    const timeoutId = setTimeout(() => {
-      setStatus('Proxy did not respond quickly — you may check your proxy server logs.', true);
-      cleanupEvents();
-    }, 15000);
-    return;
-  }
-  setStatus('Attempting direct load into iframe...');
-  let directLoaded = false;
-  function onFrameLoad(){
-    directLoaded = true;
-    cleanupDirect();
-    setStatus('Loaded directly in iframe (site allows embedding).');
-  }
-  function onFrameError(){
-    cleanupDirect();
-  }
-  function cleanupDirect(){
-    frame.removeEventListener('load', onFrameLoad);
-    frame.removeEventListener('error', onFrameError);
-    window.clearTimeout(directTimeout);
-  }
-  frame.addEventListener('load', onFrameLoad);
-  frame.addEventListener('error', onFrameError);
-  frame.removeAttribute('srcdoc');
-  frame.src = url;
-  const directTimeout = window.setTimeout(async () => {
-    if(directLoaded) return;
-    setStatus('Direct frame load likely blocked — trying fetch fallback (may fail due to CORS/CSP).');
-    try {
-      let fetchUrl = url;
-      if(proxyBase){
-        fetchUrl = buildProxyUrl(proxyBase, url);
-        setStatus('Using configured proxy for fetch fallback.');
-      }
-      const resp = await fetch(fetchUrl, { mode: 'cors', redirect: 'follow' });
-      const contentType = resp.headers.get('content-type') || '';
-      if(!resp.ok){
-        setStatus('Fetch failed: ' + resp.status + ' ' + resp.statusText, true);
-        return;
-      }
-      if(!contentType.includes('text/html')){
-        setStatus('Fetched resource is not HTML (content-type: ' + contentType + '). Cannot inject into iframe.', true);
-        return;
-      }
-      const text = await resp.text();
-      const baseTag = `<base href="${escapeHtml(url)}">`;
-      const sandboxedHtml = `<!doctype html><html><head>${baseTag}<meta charset="utf-8"></head><body>${text}</body></html>`;
-      frame.srcdoc = sandboxedHtml;
-      setStatus('Injected fetched HTML into iframe via srcdoc. Note: scripts, forms, and some resources may not work due to CORS/CSP.');
-    } catch (err) {
-      console.error(err);
-      setStatus('Fetch fallback failed: ' + (err && err.message ? err.message : 'unknown error'), true);
-    }
-  }, 2500);
+function buildProxyUrl(target){
+  return proxyBase + encodeURIComponent(target);
 }
-function shorten(s, n=60){
-  if(!s) return '';
-  return s.length > n ? s.slice(0, n/2) + '…' + s.slice(-n/2) : s;
+function createTab(url="about:blank"){
+  const tabId = 'tab'+(++tabCounter);
+  const iframe = document.createElement('iframe');
+  iframe.sandbox="allow-same-origin allow-scripts allow-forms allow-popups";
+  iframe.src = buildProxyUrl(url);
+  iframe.dataset.url = url;
+  const tab = {
+    id: tabId,
+    title: url,
+    iframe,
+    url,
+    backStack: [],
+    forwardStack: []
+  };
+  tabs.push(tab);
+  mainContainer.appendChild(iframe);
+  switchTab(tabId);
+  renderTabs();
+  return tab;
 }
-async function testProxy(){
-  const proxyBase = proxyInput.value.trim();
-  if(!proxyBase){
-    setStatus('Please enter a proxy endpoint to test.', true);
-    return;
-  }
-  const sample = 'https://example.com/';
-  const proxyUrl = buildProxyUrl(proxyBase, sample);
-  setStatus('Testing proxy endpoint...');
-  try {
-    const resp = await fetch(proxyUrl, { method: 'GET', mode: 'cors', redirect: 'follow' });
-    if(!resp.ok){
-      setStatus('Proxy test failed: ' + resp.status + ' ' + resp.statusText, true);
-      return;
+function switchTab(tabId){
+  activeTabId = tabId;
+  tabs.forEach(t=>{
+    t.iframe.style.display = (t.id===tabId)?'block':'none';
+  });
+  renderTabs();
+  const t = tabs.find(x=>x.id===tabId);
+  if(t) urlInput.value = t.url;
+}
+function closeTab(tabId){
+  if(tabs.length===1) return;
+  const idx = tabs.findIndex(t=>t.id===tabId);
+  if(idx>=0){
+    const tab = tabs[idx];
+    mainContainer.removeChild(tab.iframe);
+    tabs.splice(idx,1);
+    if(activeTabId===tabId){
+      const newActive = tabs[idx]||tabs[idx-1];
+      switchTab(newActive.id);
     }
-    const ct = resp.headers.get('content-type') || '';
-    if(ct.includes('text/html')){
-      setStatus('Proxy test succeeded (returned HTML). Good sign — proxy can fetch example.com.');
-    } else {
-      setStatus('Proxy responded but did not return HTML (content-type: ' + ct + ').', true);
-    }
-  } catch (err){
-    console.error(err);
-    setStatus('Proxy test failed: ' + (err && err.message ? err.message : 'network/error'), true);
+    renderTabs();
   }
 }
-urlInput.addEventListener('keydown', (e) => { if(e.key === 'Enter') loadWebsite(); });
+function renderTabs(){
+  tabBar.innerHTML="";
+  tabs.forEach(t=>{
+    const btn = document.createElement('div');
+    btn.className='tab'+(t.id===activeTabId?' active':'');
+    btn.innerHTML=`<span>${t.title}</span> <span class="close-tab" data-id="${t.id}">×</span>`;
+    btn.onclick = ()=>switchTab(t.id);
+    btn.querySelector('.close-tab').onclick = e=>{ e.stopPropagation(); closeTab(t.id); };
+    tabBar.appendChild(btn);
+  });
+  tabBar.appendChild(addTabBtn);
+}
+addTabBtn.onclick = ()=>createTab('https://example.com');
+function navigate(url){
+  const tab = tabs.find(t=>t.id===activeTabId);
+  if(!tab) return;
+  const newUrl = normalizeUrl(url);
+  if(tab.url) tab.backStack.push(tab.url);
+  tab.forwardStack=[];
+  tab.url = newUrl;
+  tab.iframe.src = buildProxyUrl(newUrl);
+  tab.iframe.dataset.url = newUrl;
+  urlInput.value = newUrl;
+  setStatus('Loading '+newUrl);
+}
+backBtn.onclick = ()=>{
+  const tab = tabs.find(t=>t.id===activeTabId);
+  if(!tab || tab.backStack.length===0) return;
+  tab.forwardStack.push(tab.url);
+  const prev = tab.backStack.pop();
+  tab.url=prev;
+  tab.iframe.src = buildProxyUrl(prev);
+  urlInput.value=prev;
+};
+forwardBtn.onclick = ()=>{
+  const tab = tabs.find(t=>t.id===activeTabId);
+  if(!tab || tab.forwardStack.length===0) return;
+  tab.backStack.push(tab.url);
+  const next = tab.forwardStack.pop();
+  tab.url=next;
+  tab.iframe.src = buildProxyUrl(next);
+  urlInput.value=next;
+};
+reloadBtn.onclick = ()=>{
+  const tab = tabs.find(t=>t.id===activeTabId);
+  if(tab) tab.iframe.src = buildProxyUrl(tab.url);
+};
+goBtn.onclick = ()=>navigate(urlInput.value);
+urlInput.addEventListener('keydown',e=>{if(e.key==='Enter') navigate(urlInput.value);});
+closeBtn.onclick = ()=>{
+  closeTab(activeTabId);
+};
+minimizeBtn.onclick = ()=>{
+  const tab = tabs.find(t=>t.id===activeTabId);
+  if(tab) tab.iframe.style.display='none';
+};
+maximizeBtn.onclick = ()=>{
+  const tab = tabs.find(t=>t.id===activeTabId);
+  if(tab) tab.iframe.style.height = (tab.iframe.style.height==='100%'?'calc(100% + 100px)':'100%');
+};
+createTab('https://example.com');
 </script>
 </body>
 </html>
