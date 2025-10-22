@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>s.prxy d</title>
+<title>s.prxy</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <style>
 html,body{height:100%;margin:0;font-family:Inter,system-ui,Segoe UI,Roboto;-webkit-font-smoothing:antialiased}
@@ -94,7 +94,7 @@ function getFriendlyTitle(url) {
   try {
     const u = new URL(url);
     let hostname = u.hostname.replace(/^www\./,'');
-    hostname = hostname.replace(/\.(com|org|net|io|co|xyz|dev|app|info|me|online|is)$/i,'');
+    hostname = hostname.replace(/\.(com|org|net|io|co|xyz|dev|app|info|me|online|is|github|cloudfront|carrd|site123)$/i,'');
     return hostname.charAt(0).toUpperCase() + hostname.slice(1);
   } catch {
     return url;
