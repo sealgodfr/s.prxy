@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>s.prxy c</title>
+<title>s.prxy d</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <style>
 html,body{height:100%;margin:0;font-family:Inter,system-ui,Segoe UI,Roboto;-webkit-font-smoothing:antialiased}
@@ -90,6 +90,16 @@ function normalizeUrl(raw){
 function buildProxyUrl(target){
   return proxyBase + encodeURIComponent(target);
 }
+function getFriendlyTitle(url) {
+  try {
+    const u = new URL(url);
+    let hostname = u.hostname.replace(/^www\./,'');
+    hostname = hostname.replace(/\.(com|org|net|io|co|xyz|dev|app|info|me|online|is)$/i,'');
+    return hostname.charAt(0).toUpperCase() + hostname.slice(1);
+  } catch {
+    return url;
+  }
+}
 function createTab(url="about:blank"){
   const tabId = 'tab'+(++tabCounter);
   const iframe = document.createElement('iframe');
@@ -98,7 +108,7 @@ function createTab(url="about:blank"){
   iframe.dataset.url = url;
   const tab = {
     id: tabId,
-    title: url,
+    title: getFriendlyTitle(url),
     iframe,
     url,
     backStack: [],
@@ -155,8 +165,10 @@ function navigate(url){
   tab.url = newUrl;
   tab.iframe.src = buildProxyUrl(newUrl);
   tab.iframe.dataset.url = newUrl;
+  tab.title = getFriendlyTitle(newUrl);
   urlInput.value = newUrl;
   setStatus('Loading '+newUrl);
+  renderTabs();
 }
 backBtn.onclick = ()=>{
   const tab = tabs.find(t=>t.id===activeTabId);
@@ -165,7 +177,9 @@ backBtn.onclick = ()=>{
   const prev = tab.backStack.pop();
   tab.url=prev;
   tab.iframe.src = buildProxyUrl(prev);
+  tab.title = getFriendlyTitle(prev);
   urlInput.value=prev;
+  renderTabs();
 };
 forwardBtn.onclick = ()=>{
   const tab = tabs.find(t=>t.id===activeTabId);
@@ -174,7 +188,9 @@ forwardBtn.onclick = ()=>{
   const next = tab.forwardStack.pop();
   tab.url=next;
   tab.iframe.src = buildProxyUrl(next);
+  tab.title = getFriendlyTitle(next);
   urlInput.value=next;
+  renderTabs();
 };
 reloadBtn.onclick = ()=>{
   const tab = tabs.find(t=>t.id===activeTabId);
@@ -182,9 +198,7 @@ reloadBtn.onclick = ()=>{
 };
 goBtn.onclick = ()=>navigate(urlInput.value);
 urlInput.addEventListener('keydown',e=>{if(e.key==='Enter') navigate(urlInput.value);});
-closeBtn.onclick = ()=>{
-  closeTab(activeTabId);
-};
+closeBtn.onclick = ()=>{ closeTab(activeTabId); };
 minimizeBtn.onclick = ()=>{
   const tab = tabs.find(t=>t.id===activeTabId);
   if(tab) tab.iframe.style.display='none';
