@@ -155,7 +155,7 @@ function renderTabs(){
   });
   tabBar.appendChild(addTabBtn);
 }
-addTabBtn.onclick = ()=>createTab('https://example.com');
+addTabBtn.onclick = ()=>createTab('https://sealgodfr.github.io/sp.newpage');
 function navigate(url){
   const tab = tabs.find(t=>t.id===activeTabId);
   if(!tab) return;
@@ -207,7 +207,7 @@ maximizeBtn.onclick = ()=>{
   const tab = tabs.find(t=>t.id===activeTabId);
   if(tab) tab.iframe.style.height = (tab.iframe.style.height==='100%'?'calc(100% + 100px)':'100%');
 };
-createTab('https://example.com');
+createTab('https://sealgodfr.github.io/sp.newpage');
 </script>
 </body>
 </html>
