@@ -3,67 +3,20 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>s.prxy a</title>
+<title>s.prxy</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <style>
-body, html {
-  height: 100%;
-  margin: 0;
-  font-family: 'Inter', sans-serif;
-  overflow: hidden;
-}
-#loadingScreen {
-  position: fixed;
-  top:0; left:0;
-  width:100%; height:100%;
+html, body {
+  margin:0; padding:0; height:100%; font-family: 'Inter', sans-serif; display:flex; flex-direction:column;
   background: linear-gradient(135deg, #b993d6, #8ca6db, #a0d8ef, #c6a0f6);
   background-size: 400% 400%;
-  display:flex;
-  flex-direction:column;
-  justify-content:center;
-  align-items:center;
-  z-index:100;
-  animation: gradientMove 18s ease infinite;
+  animation: gradientMove 20s ease infinite;
 }
-#loadingScreen h1 {
-  color:#fff;
-  font-size:3em;
-  margin-bottom:50px;
-  text-shadow:0 0 10px #fff, 0 0 20px #fff;
-  opacity:0;
-  transform:translateY(-20px);
-  animation: fadeInUp 1s forwards 0.3s;
+@keyframes gradientMove {
+  0%{background-position:0% 50%;}
+  50%{background-position:100% 50%;}
+  100%{background-position:0% 50%;}
 }
-#loadingBarContainer {
-  width:60%;
-  height:20px;
-  background: rgba(0,0,0,0.2);
-  border-radius:10px;
-  overflow:hidden;
-  box-shadow: 0 0 20px #fff inset;
-}
-#loadingBar {
-  width:0%;
-  height:100%;
-  background:#fff;
-  border-radius:10px;
-  box-shadow:0 0 20px #fff, 0 0 40px #fff inset;
-  position: relative;
-}
-.spark {
-  position:absolute;
-  width:5px; height:20px;
-  background:#00ffff;
-  top:0;
-  border-radius:50%;
-  opacity:0.8;
-  box-shadow:0 0 15px #00ffff,0 0 30px #00ffff;
-  animation: sparkAnim 1s linear infinite;
-}
-@keyframes sparkAnim {0%{transform:translateX(0) scale(0.5);opacity:1;}100%{transform:translateX(100%) scale(0);opacity:0;}}
-@keyframes gradientMove {0%{background-position:0% 50%;}50%{background-position:100% 50%;}100%{background-position:0% 50%;}}
-@keyframes fadeInUp {to {opacity:1; transform:translateY(0);}}
-body.loaded #loadingScreen {display:none;}
 header {
   background:white;
   padding:0.5rem 1rem;
@@ -75,45 +28,35 @@ header {
 .header-buttons .red{background:#f56565;}
 .header-buttons .yellow{background:#ecc94b;}
 .header-buttons .green{background:#48bb78;}
-
 #addressBar {
-  display:flex; align-items:center; gap:0.5rem; padding:0.5rem;
-  background:#f0f0f0;
+  display:flex; align-items:center; gap:0.5rem; padding:0.5rem; background:rgba(255,255,255,0.9);
 }
 #addressBar input {
-  flex:1;
-  padding:0.4rem 0.6rem;
-  border-radius:6px;
-  border:1px solid #d1d5db;
-  outline:none;
+  flex:1; padding:0.4rem 0.6rem; border-radius:6px; border:1px solid #d1d5db; outline:none;
 }
 #addressBar button {
-  background:#3b82f6; color:white; padding:0.4rem 1rem;
-  border-radius:6px; cursor:pointer; transition:0.2s;
+  background:#3b82f6; color:white; padding:0.4rem 1rem; border-radius:6px; cursor:pointer; transition:0.2s;
 }
 #addressBar button:hover {background:#2563eb;}
-main {flex:1; display:flex; justify-content:center; align-items:center; background:#f4f5f7; height:calc(100vh - 96px); overflow:hidden;}
-iframe {
-  width:88%; height:88%; border:none; border-radius:18px; background:#000;
-  box-shadow:0 8px 30px rgba(0,0,0,0.25); transition:all 0.4s ease;
+main {
+  flex:1; position:relative; overflow:hidden;
 }
-.pause-overlay {position:absolute;width:88%;height:88%;background:rgba(0,0,0,0.55);border-radius:18px;display:flex;align-items:center;justify-content:center;font-size:3em;color:white;opacity:0;pointer-events:none;text-shadow:0 0 20px rgba(255,255,255,0.8);transition:opacity 0.4s ease;}
-.pause-overlay.active{opacity:1;pointer-events:all;}
-footer {text-align:center; padding:0.5rem; color:#6b7280; background:white;}
+iframe {
+  width:100%; height:100%; border:none;
+  border-radius:0 0 0 0;
+  background:white;
+}
+footer {text-align:center; padding:0.5rem; color:#fff; font-weight:500;}
 </style>
 </head>
 <body>
-<div id="loadingScreen">
-  <h1>s.prxy - Developed by @sealgod.xyz</h1>
-  <div id="loadingBarContainer"><div id="loadingBar"></div></div>
-</div>
 <header>
   <div class="header-buttons">
     <div class="red"></div>
     <div class="yellow"></div>
     <div class="green"></div>
   </div>
-  <div class="font-medium text-gray-700">Clean Browser UI</div>
+  <div class="font-medium text-gray-700">s.prxy - Developed by @sealgod.xyz</div>
   <div class="flex gap-2">
     <button class="text-gray-500 hover:text-gray-700">Settings</button>
     <button class="text-gray-500 hover:text-gray-700">Profile</button>
@@ -126,38 +69,17 @@ footer {text-align:center; padding:0.5rem; color:#6b7280; background:white;}
 </div>
 <main>
   <iframe id="webFrame"></iframe>
-  <div class="pause-overlay" id="pauseOverlay">⏸ Paused</div>
 </main>
-<footer>© <span id="year"></span> s.prxy</footer>
+<footer>© <span id="year"></span> Clean Browser UI</footer>
 <script>
-const loadingBar = document.getElementById('loadingBar');
-let progress = 0;
-const interval = setInterval(()=>{
-  progress+=1;
-  loadingBar.style.width = progress+'%';
-  if(progress>=100){
-    clearInterval(interval);
-    document.body.classList.add('loaded');
-  }
-},20);
-for(let i=0;i<20;i++){
-  const spark = document.createElement('div');
-  spark.className='spark';
-  spark.style.animationDelay=(Math.random()*2)+'s';
-  spark.style.top=Math.random()*100+'%';
-  loadingBar.appendChild(spark);
-}
 const frame = document.getElementById('webFrame');
-const pauseOverlay = document.getElementById('pauseOverlay');
-let paused=false;
-function loadWebsite(){
-  const url = document.getElementById('urlInput').value;
-  if(!url) return;
-  frame.src = url;
-  paused=false;
-  pauseOverlay.classList.remove('active');
-}
 document.getElementById('year').textContent = new Date().getFullYear();
+function loadWebsite() {
+  let url = document.getElementById('urlInput').value;
+  if (!url) return;
+  if (!url.startsWith('http')) url = 'https://' + url;
+  frame.src = url;
+}
 </script>
 </body>
 </html>
